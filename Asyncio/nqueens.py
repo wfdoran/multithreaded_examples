@@ -1,10 +1,7 @@
 import asyncio
 
-def count(n, board):
+def get_good(n, board):
     m = len(board)
-    if m == n:
-        return 1
-
     good = [True] * n
     
     for i in range(m):
@@ -15,6 +12,14 @@ def count(n, board):
         x = board[i] - (m - i)
         if x >= 0 and x < n:
             good[x] = False
+
+    return good
+
+def count(n, board):
+    if n == len(board):
+        return 1
+    
+    good = get_good(n, board)
 
     rv = 0
     for i in range(n):
@@ -25,32 +30,20 @@ def count(n, board):
     return rv
 
 async def count2(n, board):
-    m = len(board)
-    if m == n:
+    if n == len(board):
         return 1
-
-    good = [True] * n
     
-    for i in range(m):
-        good[board[i]] = False
-        x = board[i] + (m - i)
-        if x >= 0 and x < n:
-            good[x] = False
-        x = board[i] - (m - i)
-        if x >= 0 and x < n:
-            good[x] = False
+    good = get_good(n, board)
     
     tasks = []
     for i in range(n):
         if good[i]:
             sub_board = board[:]
             sub_board.append(i)
-            tasks.append(asyncio.create_task(count2(n, sub_board)))
+            tasks.append(count2(n, sub_board))
 
-    rv = 0
-    for t in tasks:
-        rv += await t
-    return rv
+    x = await asyncio.gather(*tasks)
+    return sum(x)
 
 async def task(n,i):
     return count(n, [i])
@@ -60,7 +53,7 @@ async def count3(n):
     x = await asyncio.gather(*tasks)
     return sum(x)
             
-n = 8
+n = 10
 print(count(n, []))
 print(asyncio.run(count2(n,[])))
 print(asyncio.run(count3(n)))
