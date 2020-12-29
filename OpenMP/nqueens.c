@@ -13,11 +13,13 @@ typedef struct {
 } node_t;
 
 typedef struct {
+  int num_waiting;
+  int num_workers;
   int stack_size;
   node_t **stack;
 }stack_t;
 
-stack_t *stack_init(int n) {
+stack_t *stack_init(int n, int num_workers) {
   node_t *x = malloc(sizeof(node_t));
   x->n = n;
   x->m = 0;
@@ -26,17 +28,26 @@ stack_t *stack_init(int n) {
   s->stack = malloc(n * n * sizeof(node_t*));
   s->stack_size = 1;
   s->stack[0] = x;
+  s->num_workers = num_workers;
+  s->num_waiting = 0;
 
   return s;
 }
 
 node_t *stack_get(stack_t *s) {
-  if (s->stack_size == 0) {
-    return NULL;
-  }
+  s->num_waiting += 1;
 
-  s->stack_size -= 1;
-  return s->stack[s->stack_size];
+  while (true) {
+    if (s->stack_size == 0 ) {
+      if (s->num_waiting == s->num_workers) {
+	return NULL;
+      }
+    } else {
+      s->num_waiting -= 1;
+      s->stack_size -= 1;
+      return s->stack[s->stack_size];
+    }
+  }
 }
 
 void stack_put(stack_t *s, node_t *x) {
@@ -52,7 +63,6 @@ stack_t *stack_destroy(stack_t *s) {
   return NULL;
 }
     
-
 int worker(stack_t *s) {
   int count = 0;
 
@@ -97,7 +107,7 @@ int worker(stack_t *s) {
 }
 
 int main(void) {
-  stack_t *s = stack_init(10);
+  stack_t *s = stack_init(10, 1);
   printf("%d\n", worker(s));
   s = stack_destroy(s);
   
