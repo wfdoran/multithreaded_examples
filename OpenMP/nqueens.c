@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omp.h>
+#include <assert.h>
 
 #define MAX (32)
 
@@ -82,6 +83,7 @@ stack_t *stack_destroy(stack_t *s) {
 }
     
 int worker(stack_t *s) {
+  printf("AAA %s\n", __func__); fflush(stdout);
   int count = 0;
 
   while (true) {    
@@ -126,20 +128,18 @@ int worker(stack_t *s) {
 
 int main(void) {
   int n = 12;
-  int num_workers = 2;
+  int num_workers = 4;
 
   stack_t *s = stack_init(n, num_workers);
   int result[num_workers];
 
-  #pragma omp parallel sections
+#pragma omp parallel num_threads(num_workers)
   {
-    #pragma omp section
-    result[0] = worker(s);
-
-    #pragma omp section
-    result[1] = worker(s);
+    int tid = omp_get_thread_num();
+    assert(tid >= 0 && tid < num_workers);
+    result[tid] = worker(s);
   }
- 
+   
   int total = 0;
   for (int i = 0; i < num_workers; i++) {
     total += result[i];

@@ -8,3 +8,6 @@ omp1: omp1.c
 
 omp2: omp2.c
 	$(CC) $(CFLAGS) omp2.c -o omp2
+
+nqueens: nqueens.c
+	$(CC) $(CFLAGS) nqueens.c -o nqueens
