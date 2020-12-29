@@ -12,21 +12,57 @@ typedef struct {
   int board[MAX];
 } node_t;
 
+typedef struct {
+  int stack_size;
+  node_t **stack;
+}stack_t;
 
+stack_t *stack_init(int n) {
+  node_t *x = malloc(sizeof(node_t));
+  x->n = n;
+  x->m = 0;
   
-int worker(node_t *init_node) {
+  stack_t *s = malloc(sizeof(stack_t));
+  s->stack = malloc(n * n * sizeof(node_t*));
+  s->stack_size = 1;
+  s->stack[0] = x;
+
+  return s;
+}
+
+node_t *stack_get(stack_t *s) {
+  if (s->stack_size == 0) {
+    return NULL;
+  }
+
+  s->stack_size -= 1;
+  return s->stack[s->stack_size];
+}
+
+void stack_put(stack_t *s, node_t *x) {
+  s->stack[s->stack_size] = x;
+  s->stack_size += 1;
+}
+
+stack_t *stack_destroy(stack_t *s) {
+  s->stack_size = 0;
+  free(s->stack);
+  s->stack = NULL;
+  free(s);
+  return NULL;
+}
+    
+
+int worker(stack_t *s) {
   int count = 0;
 
-  int n = init_node->n;
-  int max_stack = n * n;
-  node_t **stack = malloc(max_stack * sizeof(node_t*));
-  stack[0] = init_node;
-  int stack_size = 1;
+  while (true) {    
+    node_t *x = stack_get(s);
+    if (x == NULL) {
+      break;
+    }
 
-  while (stack_size > 0) {
-    stack_size--;
-    node_t *x = stack[stack_size];
-
+    int n = x->n;
     int m = x->m;
 
     if (m == n) {
@@ -48,8 +84,8 @@ int worker(node_t *init_node) {
 	  sub->m = m + 1;
 	  memcpy(sub->board, x->board, m * sizeof(int));
 	  sub->board[m] = i;
-	  stack[stack_size] = sub;
-	  stack_size++;
+
+	  stack_put(s, sub);
 	}
       }
     }
@@ -57,17 +93,14 @@ int worker(node_t *init_node) {
     free(x);
   }
   
-  free(stack);
   return count;
 }
 
 int main(void) {
-  node_t *init = malloc(sizeof(node_t));
-  init->n = 10;
-  init->m = 0;
-
-  printf("%d\n", worker(init));
-
+  stack_t *s = stack_init(10);
+  printf("%d\n", worker(s));
+  s = stack_destroy(s);
+  
   return 0;
 }
   
