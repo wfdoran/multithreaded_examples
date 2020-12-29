@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+#include <omp.h>
 
 #define MAX (32)
 
@@ -35,24 +35,42 @@ stack_t *stack_init(int n, int num_workers) {
 }
 
 node_t *stack_get(stack_t *s) {
+#pragma omp critical(stack)
+  {
   s->num_waiting += 1;
-
+  }
+  
   while (true) {
+    node_t *rv;
+    bool done = false;
+
+#pragma omp critical(stack)
+    {
     if (s->stack_size == 0 ) {
       if (s->num_waiting == s->num_workers) {
-	return NULL;
+	rv = NULL;
+	done = true;
       }
     } else {
       s->num_waiting -= 1;
-      s->stack_size -= 1;
-      return s->stack[s->stack_size];
+      s->stack_size -= 1; 
+      rv = s->stack[s->stack_size];
+      done = true;
+    }
+    }
+
+    if (done) {
+      return rv;
     }
   }
 }
 
 void stack_put(stack_t *s, node_t *x) {
+#pragma omp critical(stack)
+  {
   s->stack[s->stack_size] = x;
   s->stack_size += 1;
+  }
 }
 
 stack_t *stack_destroy(stack_t *s) {
@@ -71,7 +89,6 @@ int worker(stack_t *s) {
     if (x == NULL) {
       break;
     }
-
     int n = x->n;
     int m = x->m;
 
@@ -100,6 +117,7 @@ int worker(stack_t *s) {
       }
     }
 
+    x->m = -1;
     free(x);
   }
   
@@ -107,10 +125,31 @@ int worker(stack_t *s) {
 }
 
 int main(void) {
-  stack_t *s = stack_init(10, 1);
-  printf("%d\n", worker(s));
-  s = stack_destroy(s);
+  int n = 12;
+  int num_workers = 2;
+
+  stack_t *s = stack_init(n, num_workers);
+  int result[num_workers];
+
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    result[0] = worker(s);
+
+    #pragma omp section
+    result[1] = worker(s);
+  }
+ 
+  int total = 0;
+  for (int i = 0; i < num_workers; i++) {
+    total += result[i];
+    printf("worker = %d count = %d\n", i, result[i]);
+  }
+
+  printf("total = %d\n", total);
+ 
   
+  s = stack_destroy(s);
   return 0;
 }
-  
+
