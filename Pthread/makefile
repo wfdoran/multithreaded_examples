@@ -4,3 +4,6 @@ LINK = -pthread
 
 hello: hello.c
 	$(CC) $(CFLAGS) hello.c -o hello $(LINK)
+
+sumsqr: sumsqr.c
+	$(CC) $(CFLAGS) sumsqr.c -o sumsqr $(LINK)
