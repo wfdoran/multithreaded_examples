@@ -11,3 +11,6 @@ omp2: omp2.c
 
 nqueens: nqueens.c
 	$(CC) $(CFLAGS) nqueens.c -o nqueens
+
+pi: pi.c
+	$(CC) $(CFLAGS) pi.c -o pi -lm
