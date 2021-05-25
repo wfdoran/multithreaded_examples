@@ -15,15 +15,6 @@ async fn hello(task_id: i64, num_tasks: i64, n: i64) -> i64 {
 fn main() {
     let n: i64 = 1000;
     let num_tasks: i64 = 5;
-
-    /*
-    let mut futures = vec![];
-
-    for i in 0..num_tasks {
-        futures.push(hello(i, num_tasks, n));
-    }
-    */
-
     let futures: Vec<_> = (0..num_tasks).map(|i| hello(i,num_tasks,n)).collect();
 
     let mut total: i64 = 0;
